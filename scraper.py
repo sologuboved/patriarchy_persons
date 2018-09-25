@@ -45,8 +45,10 @@ def construct_url(flexion):
 
 def scrape_person(flexion, category):
     url = construct_url(flexion)
-    section = BeautifulSoup(requests.get(url).content,
-                            'lxml').find_all('div', {'class': 'section'})[0]
+    section = fix_paragraphs(BeautifulSoup(requests.get(url).content,
+                                           'lxml').find_all('div', {'class': 'section'})[0])
+    # print(fix_paragraphs(BeautifulSoup(requests.get(url).content,
+    #                                    'lxml').find_all('div', {'class': 'section'})[0]))
     # for tag_p in section.find_all('p'):
     #     tag_p.replace_with('\n')
     datum = {key.text.strip(): value.text.strip() for key, value in zip(section.find_all('b'), section.find_all('dd'))}
@@ -70,6 +72,10 @@ def scrape_all_persons():
     finally:
         print('\nDumping...')
         dump_utf_json(persons, PERSONALIA_JSON)
+
+
+def fix_paragraphs(string):
+    return BeautifulSoup(str(string).replace('<p class="text">', '\n').replace('</p>', ''), 'lxml')
 
 
 def list_fields():
@@ -101,5 +107,5 @@ def list_fields():
 
 
 if __name__ == '__main__':
-    # scrape_all_persons()
-    list_fields()
+    scrape_all_persons()
+    # list_fields()
