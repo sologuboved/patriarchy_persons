@@ -30,10 +30,13 @@ def collect_all_flexions():
 
 
 def compare_number():
-    categorized_number = sum([len(flexions) for _, flexions in load_utf_json(FLEXIONS_JSON).items()])  # 626
     main_page_number = len(BeautifulSoup(requests.get(MAIN_URL).content,
                                          'lxml').find_all('div', {'id': 'main'})[0].find_all('h4', {'class': 'title'}))
-    print(main_page_number <= categorized_number)
+    print(main_page_number <= get_total_number())
+
+
+def get_total_number():
+    return sum([len(flexions) for _, flexions in load_utf_json(FLEXIONS_JSON).items()])
 
 
 def construct_url(flexion):
@@ -44,8 +47,8 @@ def scrape_person(flexion, category):
     url = construct_url(flexion)
     section = BeautifulSoup(requests.get(url).content,
                             'lxml').find_all('div', {'class': 'section'})[0]
-    # for tag_br in soup.find_all('br'):  # keeping paragraphs
-    #     tag_br.replace_with('\n')
+    for tag_p in section.find_all('p'):
+        tag_p.replace_with('\n')
     datum = {key.text.strip(): value.text.strip() for key, value in zip(section.find_all('b'), section.find_all('dd'))}
     datum.update({NAME: section.find_all('h1')[0].text, CATEGORY: category, URL: url})
     return datum
@@ -54,12 +57,13 @@ def scrape_person(flexion, category):
 @which_watch
 def scrape_all_persons():
     persons = list()
+    total_num = get_total_number()
     count = 0
     try:
         for category, flexions in load_utf_json(FLEXIONS_JSON).items():
             for flexion in flexions:
                 count += 1
-                print('\r{} of 626'.format(count), end='', flush=True)
+                print('\r{} of {}'.format(count, total_num), end='', flush=True)
                 persons.append(scrape_person(flexion, category))
     except Exception as e:
         print('\n' + str(e))
