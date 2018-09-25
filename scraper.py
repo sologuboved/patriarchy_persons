@@ -47,10 +47,6 @@ def scrape_person(flexion, category):
     url = construct_url(flexion)
     section = fix_paragraphs(BeautifulSoup(requests.get(url).content,
                                            'lxml').find_all('div', {'class': 'section'})[0])
-    # print(fix_paragraphs(BeautifulSoup(requests.get(url).content,
-    #                                    'lxml').find_all('div', {'class': 'section'})[0]))
-    # for tag_p in section.find_all('p'):
-    #     tag_p.replace_with('\n')
     datum = {key.text.strip(): value.text.strip() for key, value in zip(section.find_all('b'), section.find_all('dd'))}
     datum.update({NAME: section.find_all('h1')[0].text, CATEGORY: category, URL: url})
     return datum
