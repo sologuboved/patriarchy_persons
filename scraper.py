@@ -6,7 +6,7 @@ from basic_operations import *
 MAIN_URL = 'http://www.patriarchia.ru/db/persons/'
 FLEXIONS_JSON = 'flexions.json'
 CATEGORIES_JSON = 'categories.json'
-PERSONALIA_JSON = 'personalia_v1.json'
+PERSONALIA_JSON = 'personalia.json'
 NAME = 'Имя:'
 CATEGORY = 'Категория:'
 URL = 'Источник:'
@@ -47,8 +47,8 @@ def scrape_person(flexion, category):
     url = construct_url(flexion)
     section = BeautifulSoup(requests.get(url).content,
                             'lxml').find_all('div', {'class': 'section'})[0]
-    for tag_p in section.find_all('p'):
-        tag_p.replace_with('\n')
+    # for tag_p in section.find_all('p'):
+    #     tag_p.replace_with('\n')
     datum = {key.text.strip(): value.text.strip() for key, value in zip(section.find_all('b'), section.find_all('dd'))}
     datum.update({NAME: section.find_all('h1')[0].text, CATEGORY: category, URL: url})
     return datum
@@ -72,5 +72,34 @@ def scrape_all_persons():
         dump_utf_json(persons, PERSONALIA_JSON)
 
 
+def list_fields():
+    fields = set()
+    for person in load_utf_json(PERSONALIA_JSON):
+        fields |= set(person.keys())
+    for field in sorted(list(fields)):
+        print(field)
+
+    """
+    E-mail:
+    Web-сайт:
+    Биография:
+    Дата пострига:
+    Дата рождения:
+    Дата смерти:
+    Дата хиротонии:
+    День ангела:
+    Епархия:
+    Имя:
+    Источник:
+    Категория:
+    Место работы:
+    Награды:
+    Научные труды, публикации:
+    Образование:
+    Страна:
+    """
+
+
 if __name__ == '__main__':
-    scrape_all_persons()
+    # scrape_all_persons()
+    list_fields()
