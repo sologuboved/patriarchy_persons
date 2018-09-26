@@ -45,8 +45,10 @@ def construct_url(flexion):
 
 def scrape_person(flexion, category):
     url = construct_url(flexion)
-    section = fix_paragraphs(BeautifulSoup(requests.get(url).content,
-                                           'lxml').find_all('div', {'class': 'section'})[0])
+    soup = BeautifulSoup(requests.get(url).content, 'lxml')
+    section = BeautifulSoup(str(soup.find_all('div', {'class': 'section'})[0]).replace('<p class="text">',
+                                                                                       '\n').replace('</p>',
+                                                                                                     ''), 'lxml')
     datum = {key.text.strip(): value.text.strip() for key, value in zip(section.find_all('b'), section.find_all('dd'))}
     datum.update({NAME: section.find_all('h1')[0].text, CATEGORY: category, URL: url})
     return datum
@@ -70,36 +72,12 @@ def scrape_all_persons():
         dump_utf_json(persons, PERSONALIA_JSON)
 
 
-def fix_paragraphs(string):
-    return BeautifulSoup(str(string).replace('<p class="text">', '\n').replace('</p>', ''), 'lxml')
-
-
 def list_fields():
     fields = set()
     for person in load_utf_json(PERSONALIA_JSON):
         fields |= set(person.keys())
     for field in sorted(list(fields)):
         print(field)
-
-    """
-    E-mail:
-    Web-сайт:
-    Биография:
-    Дата пострига:
-    Дата рождения:
-    Дата смерти:
-    Дата хиротонии:
-    День ангела:
-    Епархия:
-    Имя:
-    Источник:
-    Категория:
-    Место работы:
-    Награды:
-    Научные труды, публикации:
-    Образование:
-    Страна:
-    """
 
 
 if __name__ == '__main__':
