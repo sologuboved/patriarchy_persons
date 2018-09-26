@@ -46,16 +46,53 @@ def construct_url(flexion):
 def scrape_person(flexion, category):
     url = construct_url(flexion)
     soup = BeautifulSoup(requests.get(url).content, 'lxml')
-    section = BeautifulSoup(str(soup.find_all('div', {'class': 'section'})[0]).replace('<p class="text">',
-                                                                                       '\n').replace('</p>',
-                                                                                                     ''), 'lxml')
-    datum = {key.text.strip(): value.text.strip() for key, value in zip(section.find_all('b'), section.find_all('dd'))}
+    paragraphed = str(soup.find_all('div', {'class': 'section'})[0]).replace('<p class="text">', '\n').replace('</p>',
+                                                                                                               '')
+    fieldcontents = extract_fieldcontents(paragraphed)
+    section = BeautifulSoup(paragraphed, 'lxml')
+    fieldnames = section.find_all('b')
+    assert len(fieldnames) == len(fieldcontents), print_error(fieldnames, fieldcontents, flexion)
+    datum = {fieldname.text.strip(): fieldcontent for fieldname, fieldcontent in zip(fieldnames,
+                                                                                     fieldcontents)}
     datum.update({NAME: section.find_all('h1')[0].text, CATEGORY: category, URL: url})
     return datum
 
 
+def print_error(fieldnames, fieldcontents, flexion):
+    error = '\n' + flexion + '\n'
+    for fieldname in fieldnames:
+        error += ('\n' + fieldname.text.strip())
+    error += '\n------------------'
+    for fieldcontent in fieldcontents:
+        error += ('\n\n' + fieldcontent)
+    return error
+
+
+def extract_fieldcontents(string):
+    fieldcontents = list()
+    raw_fieldcontents = re.findall(r'</b>.*?</dt>(.*?)<b>', string, flags=re.DOTALL)
+    for fieldcontent in raw_fieldcontents:
+        fieldcontents.append(process_fieldcontent(fieldcontent))
+    last_fieldcontent = re.findall(r'(?s:.*)</b>.*?</dt>(.*?)</div>', string, flags=re.DOTALL)[0]
+    fieldcontents.append(process_fieldcontent(last_fieldcontent))
+    return fieldcontents
+
+
+def process_fieldcontent(fieldcontent):
+    fieldcontent = BeautifulSoup(fieldcontent, 'lxml')
+    tag_dl = None
+    try:
+        tag_dl = fieldcontent.find_all('dl')[0].text.strip()
+    except IndexError:
+        pass
+    if tag_dl:
+        return tag_dl
+    else:
+        return fieldcontent.find_all('dd')[0].text.strip()
+
+
 @which_watch
-def scrape_all_persons():
+def scrape_all_persons(start=0):
     persons = list()
     total_num = get_total_number()
     count = 0
@@ -82,4 +119,4 @@ def list_fields():
 
 if __name__ == '__main__':
     scrape_all_persons()
-    # list_fields()
+    # print(scrape_person('350826', ''))
